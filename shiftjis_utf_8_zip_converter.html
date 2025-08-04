@@ -1,0 +1,167 @@
+<!-- Copyright (c) 2025 Hachiun
+This software is released under the MIT License, see LICENSE, see LICENSE.
+This website content is released under the CC BY 4.0 License, see LICENSE. -->
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>Shift_JIS → UTF-8 変換ツール（編集＆ZIP保存対応）</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    textarea { width: 100%; height: 200px; margin-top: 10px; }
+    .section { margin: 10px 0; }
+    #error { color: red; font-weight: bold; white-space: pre-line; }
+    #log { font-size: 14px; white-space: pre-line; background: #f5f5f5; padding: 10px; border: 1px solid #ccc; height: 150px; overflow: auto; }
+    select, button, input[type="checkbox"] { margin-top: 10px; }
+    #editorArea { display: none; margin-top: 20px; }
+  </style>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/encoding-japanese@2.0.0/encoding.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/javascript.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/php.min.js"></script>
+</head>
+<body>
+  <h1>Shift_JIS → UTF-8 変換ツール（ZIP圧縮・編集・ハイライト対応）</h1>
+
+  <div class="section">
+    <label>複数ファイルを選択：
+      <input type="file" id="fileInput" multiple accept=".txt,.html,.php,.js,.csv,.xml,.css,.cgi,.json,.py">
+    </label>
+  </div>
+
+  <div class="section">
+    出力ファイル拡張子:
+    <select id="extensionSelect">
+      <option value="txt">.txt</option>
+      <option value="html">.html</option>
+      <option value="php">.php</option>
+      <option value="js">.js</option>
+      <option value="csv">.csv</option>
+      <option value="xml">.xml</option>
+      <option value="css">.css</option>
+      <option value="cgi">.cgi</option>
+      <option value="json">.json</option>
+      <option value="py">.py</option>
+    </select>
+  </div>
+
+  <div class="section">
+    <label>
+      <input type="checkbox" id="forceCheckbox">
+      強制変換を許可する（文字コードがShift_JISでなくても変換）
+    </label><br>
+    <small style="color: #c00">※変換精度に注意。誤認識の可能性があります。</small>
+  </div>
+
+  <div class="section">
+    <button id="convertBtn" disabled>すべてUTF-8変換 → ZIP保存</button>
+  </div>
+
+  <div id="editorArea">
+    <h3>ファイル内容を確認・編集（クリックで切替）:</h3>
+    <select id="fileSelector"></select>
+    <pre><code id="preview" class="plaintext"></code></pre>
+    <textarea id="editor"></textarea>
+  </div>
+
+  <p id="error"></p>
+  <div id="log"></div>
+
+  <script>
+    const fileInput = document.getElementById("fileInput");
+    const convertBtn = document.getElementById("convertBtn");
+    const extensionSelect = document.getElementById("extensionSelect");
+    const forceCheckbox = document.getElementById("forceCheckbox");
+    const errorMsg = document.getElementById("error");
+    const logArea = document.getElementById("log");
+    const editorArea = document.getElementById("editorArea");
+    const fileSelector = document.getElementById("fileSelector");
+    const editor = document.getElementById("editor");
+    const preview = document.getElementById("preview");
+
+    let processedFiles = [];
+
+    fileInput.addEventListener("change", () => {
+      processedFiles = [];
+      errorMsg.textContent = "";
+      logArea.textContent = "";
+      editorArea.style.display = "none";
+      fileSelector.innerHTML = "";
+
+      const files = Array.from(fileInput.files);
+      if (files.length === 0) return;
+
+      const force = forceCheckbox.checked;
+      const readerPromises = files.map(file => new Promise(resolve => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const uint8Array = new Uint8Array(reader.result);
+          const detected = Encoding.detect(uint8Array);
+          if (detected === "SJIS" || force) {
+            const text = Encoding.convert(uint8Array, { to: "UNICODE", from: "SJIS", type: "string" });
+            processedFiles.push({ name: file.name, content: text });
+            logArea.textContent += `成功：${file.name} を ${detected} として読み込み\n`;
+          } else {
+            logArea.textContent += `スキップ：${file.name} はShift_JISではありません（推定: ${detected}）\n`;
+          }
+          resolve();
+        };
+        reader.readAsArrayBuffer(file);
+      }));
+
+      Promise.all(readerPromises).then(() => {
+        if (processedFiles.length > 0) {
+          convertBtn.disabled = false;
+          editorArea.style.display = "block";
+          processedFiles.forEach((file, idx) => {
+            const opt = document.createElement("option");
+            opt.value = idx;
+            opt.textContent = file.name;
+            fileSelector.appendChild(opt);
+          });
+          fileSelector.dispatchEvent(new Event("change"));
+        } else {
+          errorMsg.textContent = "有効なファイルがありません。";
+        }
+      });
+    });
+
+    fileSelector.addEventListener("change", () => {
+      const index = parseInt(fileSelector.value);
+      const file = processedFiles[index];
+      editor.value = file.content;
+      preview.textContent = file.content;
+      const ext = file.name.split(".").pop();
+      preview.className = ext === "js" ? "language-javascript" : ext === "php" ? "language-php" : "plaintext";
+      hljs.highlightElement(preview);
+    });
+
+    editor.addEventListener("input", () => {
+      const index = parseInt(fileSelector.value);
+      processedFiles[index].content = editor.value;
+      preview.textContent = editor.value;
+      hljs.highlightElement(preview);
+    });
+
+    convertBtn.addEventListener("click", async () => {
+      const zip = new JSZip();
+      const ext = extensionSelect.value;
+      processedFiles.forEach(file => {
+        const utf8Encoded = new TextEncoder().encode(file.content);
+        const baseName = file.name.replace(/\.[^/.]+$/, "");
+        const newName = `converted_${baseName}.${ext}`;
+        zip.file(newName, utf8Encoded);
+      });
+      const blob = await zip.generateAsync({ type: "blob" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "converted_files.zip";
+      link.click();
+      logArea.textContent += `\n${processedFiles.length} 件のファイルをZIPで保存しました。`;
+    });
+  </script>
+</body>
+</html>
