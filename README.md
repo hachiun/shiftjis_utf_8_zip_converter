@@ -1,0 +1,2 @@
+# shiftjis_utf_8_zip_converter
+文字コードをShift-JISからUTF-8に変えるだけのもの
