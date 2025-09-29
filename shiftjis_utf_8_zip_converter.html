@@ -1,5 +1,5 @@
 <!-- Copyright (c) 2025 Hachiun
-This software is released under the MIT License, see LICENSE, see LICENSE.
+This software is released under the MIT License, see LICENSE.
 This website content is released under the CC BY 4.0 License, see LICENSE. -->
 
 <!DOCTYPE html>
@@ -15,6 +15,27 @@ This website content is released under the CC BY 4.0 License, see LICENSE. -->
     #log { font-size: 14px; white-space: pre-line; background: #f5f5f5; padding: 10px; border: 1px solid #ccc; height: 150px; overflow: auto; }
     select, button, input[type="checkbox"] { margin-top: 10px; }
     #editorArea { display: none; margin-top: 20px; }
+
+    /* ライセンス表記用のスタイル */
+    .license-footer {
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 1px solid #ddd;
+      font-size: 14px;
+      color: #666;
+      text-align: center;
+    }
+    .license-footer a {
+      color: #0066cc;
+      text-decoration: none;
+    }
+    .license-footer a:hover {
+      text-decoration: underline;
+    }
+    .license-badge {
+      display: inline-block;
+      margin: 10px 0;
+    }
   </style>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css">
   <script src="https://cdn.jsdelivr.net/npm/encoding-japanese@2.0.0/encoding.min.js"></script>
@@ -69,6 +90,20 @@ This website content is released under the CC BY 4.0 License, see LICENSE. -->
 
   <p id="error"></p>
   <div id="log"></div>
+
+  <!-- ライセンス表記 -->
+  <footer class="license-footer">
+    <div class="license-badge">
+      <a rel="license" href="http://creativecommons.org/licenses/by/4.0/">
+        <img alt="クリエイティブ・コモンズ・ライセンス" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/88x31.png" />
+      </a>
+    </div>
+    <div>
+      &copy; 2025 <strong>Hachiun</strong><br>
+      このウェブサイトコンテンツは <a rel="license" href="http://creativecommons.org/licenses/by/4.0/">クリエイティブ・コモンズ 表示 4.0 国際 ライセンス (CC BY 4.0)</a> の下に提供されています。<br>
+      ソースコードは <a href="https://opensource.org/licenses/MIT">MIT License</a> の下で提供されています。
+    </div>
+  </footer>
 
   <script>
     const fileInput = document.getElementById("fileInput");
