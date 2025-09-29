@@ -1,2 +1,2 @@
 # shiftjis_utf_8_zip_converter
-文字コードをShift-JISからUTF-8に変えるだけのもの
+A tool that only converts the character encoding from Shift-JIS to UTF-8
